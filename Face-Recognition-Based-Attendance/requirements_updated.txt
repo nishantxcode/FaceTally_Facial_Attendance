@@ -1,0 +1,10 @@
+opencv-python
+tensorflow==2.10.0
+pymysql
+pandas
+pillow
+gtts
+apscheduler
+numpy<2
+scikit-learn
+keras-facenet

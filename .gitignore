@@ -1,0 +1,69 @@
+# ========================
+# Python
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# ========================
+# Virtual Environment
+# ========================
+venv/
+.venv/
+env/
+
+# ========================
+# IDE / Editor
+# ========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ========================
+# Large Model Files
+# ========================
+Face-Recognition-Based-Attendance/models/facenet_keras.h5
+Face-Recognition-Based-Attendance/antispoofing_models/*.h5
+
+# ========================
+# Debug & Log Files
+# ========================
+*.log
+debug_log.txt
+full_debug.txt
+log.txt
+log2.txt
+log3.txt
+startup_log.txt
+
+# ========================
+# Dataset (face images)
+# ========================
+Face-Recognition-Based-Attendance/dataset/
+
+# ========================
+# Secrets / Config with Passwords
+# ========================
+.env
+Face-Recognition-Based-Attendance/db_config.py
+
+# ========================
+# OS Generated Files
+# ========================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ========================
+# Misc
+# ========================
+*.bak
+*.tmp
