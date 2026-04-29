@@ -6,8 +6,20 @@ import os
 import base64
 import shutil
 from config import Config
+from face_model import load_face_model, train_face_model
 
 student_bp = Blueprint('students', __name__)
+
+
+def train_and_reload_face_model():
+    """Train the web face model and refresh the recognition route's in-memory copy."""
+    result = train_face_model()
+    try:
+        from routes import recognition_routes
+        recognition_routes.web_face_model = load_face_model()
+    except Exception as e:
+        print(f"Could not refresh in-memory face model: {e}")
+    return result
 
 @student_bp.route('', methods=['GET'])
 @token_required
@@ -178,6 +190,7 @@ def update_student(current_user, student_id):
                 new_dir = os.path.join(Config.DATASET_DIR, f"{new_name}_{student_id}")
                 if os.path.exists(old_dir):
                     os.rename(old_dir, new_dir)
+                    train_and_reload_face_model()
             
             return jsonify({'message': 'Student updated successfully'}), 200
     except Exception as e:
@@ -207,8 +220,13 @@ def delete_student(current_user, student_id):
             dataset_path = os.path.join(Config.DATASET_DIR, f"{student['fname']}_{student_id}")
             if os.path.exists(dataset_path):
                 shutil.rmtree(dataset_path)
+
+            train_result = train_and_reload_face_model()
             
-            return jsonify({'message': 'Student deleted successfully'}), 200
+            return jsonify({
+                'message': 'Student deleted successfully',
+                'training': train_result
+            }), 200
     except Exception as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500
@@ -236,6 +254,10 @@ def save_face_photos(current_user, student_id):
             name = student['fname']
             dataset_dir = os.path.join(Config.DATASET_DIR, f"{name}_{student_id}")
             os.makedirs(dataset_dir, exist_ok=True)
+
+            for filename in os.listdir(dataset_dir):
+                if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    os.remove(os.path.join(dataset_dir, filename))
             
             saved_count = 0
             for i, img_data in enumerate(images):
@@ -251,15 +273,32 @@ def save_face_photos(current_user, student_id):
                     saved_count += 1
                 except Exception as e:
                     print(f"Error saving image {i}: {e}")
+
+            if saved_count == 0:
+                return jsonify({'error': 'No photos could be saved'}), 400
+
+            train_result = train_and_reload_face_model()
             
             return jsonify({
                 'message': f'{saved_count} photos saved successfully',
-                'saved_count': saved_count
+                'saved_count': saved_count,
+                'training': train_result
             }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
+
+@student_bp.route('/train-faces', methods=['POST'])
+@token_required
+def train_faces(current_user):
+    """Manually rebuild the web face model from the saved dataset."""
+    try:
+        result = train_and_reload_face_model()
+        status = 200 if result.get('trained') else 400
+        return jsonify(result), status
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @student_bp.route('/departments', methods=['GET'])
 @token_required

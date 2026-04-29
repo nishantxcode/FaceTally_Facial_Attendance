@@ -11,10 +11,11 @@ class Config:
     
     # Database
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
-    DB_USER = os.environ.get('DB_USER', 'root')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
-    DB_NAME = os.environ.get('DB_NAME', 'aborec')
+    DB_USER = os.environ.get('DB_USER', 'attendance_app')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'app_password_123')
+    DB_NAME = os.environ.get('DB_NAME', 'recognition')
     DB_PORT = int(os.environ.get('DB_PORT', 3306))
+    DB_SSL = os.environ.get('DB_SSL', 'false').lower() in ('1', 'true', 'yes')
     
     # CORS
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5173').split(',')

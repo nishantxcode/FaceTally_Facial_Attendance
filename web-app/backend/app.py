@@ -42,19 +42,18 @@ def create_app():
     @app.errorhandler(413)
     def too_large(e):
         return jsonify({'error': 'File too large (max 16MB)'}), 413
+
+    # Initialize services when Flask is created by either local Python or Gunicorn.
+    print("[STARTUP] Initializing database...")
+    init_db()
+
+    print("[STARTUP] Loading ML models...")
+    init_models()
     
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    
-    # Initialize database
-    print("[STARTUP] Initializing database...")
-    init_db()
-    
-    # Initialize ML models
-    print("[STARTUP] Loading ML models...")
-    init_models()
     
     print("[STARTUP] FaceTally API server starting...")
     print("[STARTUP] API docs: http://localhost:5000/api/health")

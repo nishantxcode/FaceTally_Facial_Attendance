@@ -47,6 +47,7 @@ export const studentsAPI = {
     update: (id, data) => api.put(`/students/${id}`, data),
     delete: (id) => api.delete(`/students/${id}`),
     savePhotos: (id, images) => api.post(`/students/${id}/capture`, { images }),
+    trainFaces: () => api.post('/students/train-faces'),
     getDepartments: () => api.get('/students/departments'),
 };
 

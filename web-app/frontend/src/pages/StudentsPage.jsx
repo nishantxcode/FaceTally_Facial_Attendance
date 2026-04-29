@@ -138,8 +138,13 @@ export default function StudentsPage() {
     const savePhotos = async () => {
         if (capturedPhotos.length === 0) { toast.error('No photos captured'); return; }
         try {
-            await studentsAPI.savePhotos(captureStudentId, capturedPhotos);
-            toast.success(`${capturedPhotos.length} photos saved!`);
+            const res = await studentsAPI.savePhotos(captureStudentId, capturedPhotos);
+            const training = res.data.training;
+            if (training?.trained) {
+                toast.success(`${capturedPhotos.length} photos saved and face model trained`);
+            } else {
+                toast.warning(training?.message || `${capturedPhotos.length} photos saved, but model was not trained`);
+            }
             setShowCapture(false);
             setCapturedPhotos([]);
             setCaptureStudentId(null);

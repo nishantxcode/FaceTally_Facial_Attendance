@@ -82,6 +82,7 @@ web-app/frontend/.env.local
 web-app/backend/__pycache__/
 web-app/backend/routes/__pycache__/
 web-app/backend/.env
+web-app/backend/models/*.pickle
 web-app/backend/models/facenet.onnx
 web-app/backend/models/facenet_keras.h5
 web-app/backend/models/antispoofing*.h5

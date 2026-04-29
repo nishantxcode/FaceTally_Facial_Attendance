@@ -8,6 +8,7 @@ import base64
 import pickle
 import os
 from config import Config
+from face_model import extract_face_vector, get_cascade, load_face_model, predict_face
 
 recognition_bp = Blueprint('recognition', __name__)
 
@@ -18,17 +19,21 @@ liveness_model = None
 recognizer = None
 label_encoder = None
 staff_details = None
+web_face_model = None
 
 def init_models():
     """Initialize ML models. Called at app startup."""
-    global face_cascade, recognizer, label_encoder, staff_details
+    global face_cascade, recognizer, label_encoder, staff_details, web_face_model
     
     try:
-        # Load face cascade
-        cascade_path = os.path.join(Config.MODEL_DIR, 'haarcascade_frontalface_default.xml')
-        if os.path.exists(cascade_path):
-            face_cascade = cv2.CascadeClassifier(cascade_path)
-            print("[MODEL] Face cascade loaded")
+        # Load face cascade from app models if present, otherwise use OpenCV's bundled cascade.
+        face_cascade = get_cascade()
+        print("[MODEL] Face cascade loaded")
+
+        # Load the web-trained fallback model built from web-app/backend/dataset.
+        web_face_model = load_face_model()
+        if web_face_model:
+            print(f"[MODEL] Web face model loaded ({len(web_face_model['samples'])} samples)")
         
         # Load recognizer
         recognizer_path = os.path.join(Config.MODEL_DIR, 'recognizer.pickle')
@@ -99,10 +104,19 @@ def get_key_by_value(val, dictionary):
 @token_required
 def recognize_face(current_user):
     """Receive a webcam frame and recognize the face."""
-    global face_cascade, recognizer, label_encoder, staff_details
+    global face_cascade, recognizer, label_encoder, staff_details, web_face_model
     
-    if face_cascade is None or recognizer is None:
-        return jsonify({'error': 'Models not loaded. Please check server configuration.'}), 503
+    if face_cascade is None:
+        try:
+            face_cascade = get_cascade()
+        except Exception as e:
+            return jsonify({'error': f'Face detector not loaded: {str(e)}'}), 503
+
+    if recognizer is None:
+        web_face_model = load_face_model()
+
+    if recognizer is None and web_face_model is None:
+        return jsonify({'error': 'Face model is not trained yet. Capture and save student photos first.'}), 503
     
     data = request.get_json()
     if not data or not data.get('image'):
@@ -130,6 +144,27 @@ def recognize_face(current_user):
             if face_region.size == 0:
                 continue
             
+            if recognizer is None and web_face_model is not None:
+                vector = extract_face_vector(face_region, face_cascade)
+                prediction = predict_face(vector, web_face_model)
+                confidence = round(prediction.confidence * 100, 1)
+
+                if prediction.student_id is not None:
+                    results.append({
+                        'name': prediction.name,
+                        'id': prediction.student_id,
+                        'confidence': confidence,
+                        'bbox': {'x': int(x), 'y': int(y), 'w': int(w), 'h': int(h)}
+                    })
+                else:
+                    results.append({
+                        'name': 'Unknown',
+                        'id': None,
+                        'confidence': confidence,
+                        'bbox': {'x': int(x), 'y': int(y), 'w': int(w), 'h': int(h)}
+                    })
+                continue
+
             resized_face = cv2.resize(face_region, (160, 160))
             
             # Normalize
@@ -250,6 +285,7 @@ def model_status(current_user):
     embeddings_path = os.path.join(Config.MODEL_DIR, 'embeddings.pickle')
     onnx_path = os.path.join(Config.MODEL_DIR, 'facenet.onnx')
     h5_path = os.path.join(Config.MODEL_DIR, 'facenet_keras.h5')
+    web_model = load_face_model()
     
     return jsonify({
         'face_cascade': os.path.exists(cascade_path),
@@ -257,5 +293,8 @@ def model_status(current_user):
         'embeddings': os.path.exists(embeddings_path),
         'facenet_onnx': os.path.exists(onnx_path),
         'facenet_h5': os.path.exists(h5_path),
+        'web_face_model': web_model is not None,
+        'web_face_samples': len(web_model['samples']) if web_model else 0,
+        'web_face_students': len(set(web_model['labels'])) if web_model else 0,
         'staff_loaded': len(staff_details) if staff_details else 0
     }), 200
