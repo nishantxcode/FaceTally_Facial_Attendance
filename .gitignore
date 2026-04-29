@@ -67,3 +67,24 @@ Desktop.ini
 # ========================
 *.bak
 *.tmp
+
+# ========================
+# Web App - Frontend
+# ========================
+web-app/frontend/node_modules/
+web-app/frontend/dist/
+web-app/frontend/.env
+web-app/frontend/.env.local
+
+# ========================
+# Web App - Backend
+# ========================
+web-app/backend/__pycache__/
+web-app/backend/routes/__pycache__/
+web-app/backend/.env
+web-app/backend/models/*.pickle
+web-app/backend/models/facenet.onnx
+web-app/backend/models/facenet_keras.h5
+web-app/backend/models/antispoofing*.h5
+web-app/backend/dataset/
+web-app/backend/venv/

@@ -1,0 +1,43 @@
+.report-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: var(--space-md);
+    background: var(--bg-glass);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    width: fit-content;
+    border: 1px solid var(--border-glass);
+}
+
+.report-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.report-tab:hover {
+    color: var(--text-primary);
+}
+
+.report-tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+}
+
+.report-filters {
+    padding: 20px;
+    margin-bottom: var(--space-md);
+}
+
+.report-summary {
+    margin-top: var(--space-md);
+}
