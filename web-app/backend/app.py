@@ -21,6 +21,14 @@ def create_app():
     app.register_blueprint(attendance_bp, url_prefix='/api/attendance')
     app.register_blueprint(report_bp, url_prefix='/api/reports')
     app.register_blueprint(recognition_bp, url_prefix='/api')
+
+    @app.route('/', methods=['GET'])
+    def index():
+        return jsonify({
+            'status': 'ok',
+            'message': 'FaceTally API is running',
+            'health': '/api/health'
+        }), 200
     
     # Health check
     @app.route('/api/health', methods=['GET'])
