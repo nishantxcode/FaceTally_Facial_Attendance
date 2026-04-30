@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
-from database import init_db
+from database import check_db_connection, init_db
 from routes.auth_routes import auth_bp
 from routes.student_routes import student_bp
 from routes.attendance_routes import attendance_bp
@@ -37,6 +37,15 @@ def create_app():
             'status': 'ok',
             'message': 'FaceTally API is running'
         }), 200
+
+    @app.route('/api/db-health', methods=['GET'])
+    def db_health():
+        ok, details = check_db_connection()
+        status = 200 if ok else 500
+        return jsonify({
+            'status': 'ok' if ok else 'error',
+            'details': details
+        }), status
     
     # Error handlers
     @app.errorhandler(404)
@@ -53,10 +62,12 @@ def create_app():
 
     # Initialize services when Flask is created by either local Python or Gunicorn.
     print("[STARTUP] Initializing database...")
-    init_db()
+    if not init_db():
+        print("[STARTUP] Database initialization failed; API will start for diagnostics.", flush=True)
 
     print("[STARTUP] Loading ML models...")
-    init_models()
+    if not init_models():
+        print("[STARTUP] Model initialization failed; API will start for diagnostics.", flush=True)
     
     return app
 
