@@ -4,6 +4,7 @@ from auth import token_required
 from datetime import datetime, timedelta
 import csv
 import io
+from time_utils import format_time_ampm, now_ist, today_ist_string
 
 report_bp = Blueprint('reports', __name__)
 
@@ -11,7 +12,7 @@ report_bp = Blueprint('reports', __name__)
 @token_required
 def get_stats(current_user):
     """Get dashboard statistics."""
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = today_ist_string()
     
     conn = get_db_connection()
     try:
@@ -39,8 +40,8 @@ def get_stats(current_user):
             # This week's attendance data (last 7 days)
             weekly_data = []
             for i in range(6, -1, -1):
-                date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
-                day_name = (datetime.now() - timedelta(days=i)).strftime('%a')
+                date = (now_ist() - timedelta(days=i)).strftime('%Y-%m-%d')
+                day_name = (now_ist() - timedelta(days=i)).strftime('%a')
                 cur.execute(
                     "SELECT COUNT(*) as cnt FROM report WHERE date = %s",
                     (date,)
@@ -61,7 +62,7 @@ def get_stats(current_user):
                 if r.get('date'):
                     r['date'] = r['date'].strftime('%Y-%m-%d')
                 if r.get('time'):
-                    r['time'] = str(r['time'])
+                    r['time'] = format_time_ampm(r['time'])
             
             # Department-wise stats
             cur.execute("""
@@ -92,7 +93,7 @@ def get_stats(current_user):
 @token_required
 def daily_report(current_user):
     """Get daily attendance report."""
-    date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date = request.args.get('date', today_ist_string())
     
     conn = get_db_connection()
     try:
@@ -114,7 +115,7 @@ def daily_report(current_user):
                     'name': s['fname'],
                     'department': s['department'],
                     'status': record['status'] if record else 'Absent',
-                    'time': str(record['time']) if record and record.get('time') else '-'
+                    'time': format_time_ampm(record['time']) if record and record.get('time') else '-'
                 })
             
             present = len([r for r in report_data if r['status'] == 'Present'])
@@ -136,8 +137,8 @@ def daily_report(current_user):
 @token_required
 def monthly_report(current_user):
     """Get monthly attendance report."""
-    month = int(request.args.get('month', datetime.now().month))
-    year = int(request.args.get('year', datetime.now().year))
+    month = int(request.args.get('month', now_ist().month))
+    year = int(request.args.get('year', now_ist().year))
     
     conn = get_db_connection()
     try:
@@ -211,7 +212,7 @@ def student_report(current_user, student_id):
                 if r.get('date'):
                     r['date'] = r['date'].strftime('%Y-%m-%d')
                 if r.get('time'):
-                    r['time'] = str(r['time'])
+                    r['time'] = format_time_ampm(r['time'])
             
             # Monthly breakdown
             cur.execute("""
@@ -240,9 +241,9 @@ def student_report(current_user, student_id):
 def export_report(current_user):
     """Export attendance report as CSV."""
     report_type = request.args.get('type', 'daily')
-    date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    month = int(request.args.get('month', datetime.now().month))
-    year = int(request.args.get('year', datetime.now().year))
+    date = request.args.get('date', today_ist_string())
+    month = int(request.args.get('month', now_ist().month))
+    year = int(request.args.get('year', now_ist().year))
     
     conn = get_db_connection()
     try:
@@ -265,7 +266,7 @@ def export_report(current_user):
                         s['fname'],
                         s['department'],
                         record['status'] if record else 'Absent',
-                        str(record['time']) if record and record.get('time') else '-'
+                        format_time_ampm(record['time']) if record and record.get('time') else '-'
                     ])
             
             elif report_type == 'monthly':

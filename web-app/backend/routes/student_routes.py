@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
 from auth import token_required
-from datetime import datetime
 import os
 import base64
 import shutil
 from config import Config
 from face_model import load_face_model, train_face_model
+from time_utils import format_time_ampm, today_ist_string
 
 student_bp = Blueprint('students', __name__)
 
@@ -101,7 +101,7 @@ def get_student(current_user, student_id):
                 if h.get('date'):
                     h['date'] = h['date'].strftime('%Y-%m-%d')
                 if h.get('time'):
-                    h['time'] = str(h['time'])
+                    h['time'] = format_time_ampm(h['time'])
             
             student['attendance_history'] = history
             return jsonify(student), 200
@@ -133,7 +133,7 @@ def add_student(current_user):
                     data['gender'],
                     data['contact_no'],
                     data['email_address'],
-                    datetime.now().strftime('%Y-%m-%d')
+                    today_ist_string()
                 )
             )
             conn.commit()
