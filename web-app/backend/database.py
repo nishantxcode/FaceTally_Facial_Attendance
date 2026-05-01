@@ -1,6 +1,10 @@
 import pymysql
 from config import Config
 
+
+last_db_error = None
+
+
 def get_db_connection():
     """Create and return a database connection."""
     connection_args = {
@@ -22,8 +26,10 @@ def get_db_connection():
 
 def init_db():
     """Initialize database tables if they don't exist."""
-    conn = get_db_connection()
+    global last_db_error
+    conn = None
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             # Login table
             cur.execute("""
@@ -69,9 +75,30 @@ def init_db():
             """)
             
             conn.commit()
+            last_db_error = None
             print("[DB] Database initialized successfully")
+            return True
     except Exception as e:
-        print(f"[DB] Error initializing database: {e}")
-        conn.rollback()
+        last_db_error = str(e)
+        print(f"[DB] Error initializing database: {e}", flush=True)
+        if conn:
+            conn.rollback()
+        return False
     finally:
-        conn.close()
+        if conn:
+            conn.close()
+
+
+def check_db_connection():
+    """Check database connectivity for deployment diagnostics."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 AS ok")
+            return True, cur.fetchone()
+    except Exception as e:
+        return False, str(e)
+    finally:
+        if conn:
+            conn.close()

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
 from auth import token_required
-from datetime import datetime, timedelta
+from time_utils import current_time_ist_string, format_time_ampm, today_ist_string
 
 attendance_bp = Blueprint('attendance', __name__)
 
@@ -54,7 +54,7 @@ def get_attendance(current_user):
                 if r.get('date'):
                     r['date'] = r['date'].strftime('%Y-%m-%d')
                 if r.get('time'):
-                    r['time'] = str(r['time'])
+                    r['time'] = format_time_ampm(r['time'])
             
             return jsonify({
                 'records': records,
@@ -77,8 +77,8 @@ def mark_attendance(current_user):
     if not data.get('student_id') or not data.get('name'):
         return jsonify({'error': 'Student ID and name are required'}), 400
     
-    date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
-    time_val = data.get('time', datetime.now().strftime('%H:%M:%S'))
+    date = data.get('date', today_ist_string())
+    time_val = data.get('time', current_time_ist_string())
     status = data.get('status', 'Present')
     
     conn = get_db_connection()
@@ -102,7 +102,9 @@ def mark_attendance(current_user):
             
             return jsonify({
                 'message': f"Attendance marked for {data['name']}",
-                'record_id': cur.lastrowid
+                'record_id': cur.lastrowid,
+                'date': date,
+                'time': format_time_ampm(time_val)
             }), 201
     except Exception as e:
         conn.rollback()
@@ -165,7 +167,7 @@ def bulk_attendance(current_user):
     """Mark attendance for multiple students at once."""
     data = request.get_json()
     students = data.get('students', [])
-    date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+    date = data.get('date', today_ist_string())
     status = data.get('status', 'Present')
     
     if not students:
@@ -187,7 +189,7 @@ def bulk_attendance(current_user):
                 
                 cur.execute(
                     "INSERT INTO report (id, name, date, time, status) VALUES (%s, %s, %s, %s, %s)",
-                    (student['id'], student['name'], date, datetime.now().strftime('%H:%M:%S'), status)
+                    (student['id'], student['name'], date, current_time_ist_string(), status)
                 )
                 marked += 1
         
@@ -207,7 +209,7 @@ def bulk_attendance(current_user):
 @token_required
 def today_attendance(current_user):
     """Get today's attendance summary."""
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = today_ist_string()
     
     conn = get_db_connection()
     try:
@@ -233,7 +235,7 @@ def today_attendance(current_user):
                 if r.get('date'):
                     r['date'] = r['date'].strftime('%Y-%m-%d')
                 if r.get('time'):
-                    r['time'] = str(r['time'])
+                    r['time'] = format_time_ampm(r['time'])
             
             return jsonify({
                 'total_students': total_students,

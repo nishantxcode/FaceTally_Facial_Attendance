@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import get_db_connection
 from auth import token_required
-from datetime import datetime
 import cv2
 import numpy as np
 import base64
@@ -9,6 +8,7 @@ import pickle
 import os
 from config import Config
 from face_model import extract_face_vector, get_cascade, load_face_model, predict_face
+from time_utils import current_time_ist_string, format_time_ampm, today_ist_string
 
 recognition_bp = Blueprint('recognition', __name__)
 
@@ -239,9 +239,8 @@ def mark_from_recognition(current_user):
     if not data.get('student_id') or not data.get('name'):
         return jsonify({'error': 'Student ID and name are required'}), 400
     
-    dt = datetime.now()
-    date = dt.strftime('%Y-%m-%d')
-    time_val = dt.strftime('%H:%M:%S')
+    date = today_ist_string()
+    time_val = current_time_ist_string()
     
     conn = get_db_connection()
     try:
@@ -268,7 +267,7 @@ def mark_from_recognition(current_user):
                 'student_id': data['student_id'],
                 'name': data['name'],
                 'date': date,
-                'time': time_val
+                'time': format_time_ampm(time_val)
             }), 201
     except Exception as e:
         conn.rollback()
