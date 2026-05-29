@@ -110,6 +110,9 @@ export default function SettingsPage() {
                                 <div className="status-item"><span>Embeddings</span><StatusDot ok={modelStatus.embeddings} /></div>
                                 <div className="status-item"><span>FaceNet ONNX</span><StatusDot ok={modelStatus.facenet_onnx} /></div>
                                 <div className="status-item"><span>FaceNet H5</span><StatusDot ok={modelStatus.facenet_h5} /></div>
+                                <div className="status-item"><span>Web Face Model</span><StatusDot ok={modelStatus.web_face_model} /></div>
+                                <div className="status-item"><span>DB Saved Model</span><StatusDot ok={modelStatus.web_face_model_db} /></div>
+                                <div className="status-item"><span>Web Samples</span><span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>{modelStatus.web_face_samples || 0}</span></div>
                                 <div className="status-item"><span>Registered Faces</span><span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>{modelStatus.staff_loaded}</span></div>
                             </div>
                         ) : (

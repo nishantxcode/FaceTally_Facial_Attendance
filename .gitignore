@@ -61,6 +61,16 @@ Face-Recognition-Based-Attendance/db_config.py
 Thumbs.db
 Desktop.ini
 .DS_Store
+Microsoft/Windows/PowerShell/ModuleAnalysisCache
+
+# ========================
+# Local Tool Caches
+# ========================
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.codex/
 
 # ========================
 # Misc
