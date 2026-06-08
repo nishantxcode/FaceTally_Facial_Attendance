@@ -151,6 +151,21 @@ export default function LoginPage() {
                 >
                     Powered by AI-driven facial recognition
                 </motion.p>
+                <motion.p
+                    className="login-footer-text"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                >
+                    Built by{' '}
+                    <a
+                        href="https://www.linkedin.com/in/nishantraikwar/"
+                        target="_blank"
+                        rel="noreferrer"
+                    >
+                        Nishant Raikwar
+                    </a>
+                </motion.p>
             </motion.div>
         </div>
     );

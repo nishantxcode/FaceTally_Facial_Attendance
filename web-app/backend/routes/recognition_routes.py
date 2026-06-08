@@ -7,7 +7,7 @@ import base64
 import pickle
 import os
 from config import Config
-from face_model import extract_face_vector, get_cascade, load_face_model, predict_face
+from face_model import extract_face_vector, get_cascade, has_db_face_model, load_face_model, predict_face
 from time_utils import current_time_ist_string, format_time_ampm, today_ist_string
 
 recognition_bp = Blueprint('recognition', __name__)
@@ -112,11 +112,14 @@ def recognize_face(current_user):
         except Exception as e:
             return jsonify({'error': f'Face detector not loaded: {str(e)}'}), 503
 
-    if recognizer is None:
+    if web_face_model is None:
         web_face_model = load_face_model()
 
     if recognizer is None and web_face_model is None:
-        return jsonify({'error': 'Face model is not trained yet. Capture and save student photos first.'}), 503
+        return jsonify({
+            'error': 'Face model is not trained yet. Capture and save student photos first.',
+            'model_missing': True
+        }), 503
     
     data = request.get_json()
     if not data or not data.get('image'):
@@ -293,6 +296,7 @@ def model_status(current_user):
         'facenet_onnx': os.path.exists(onnx_path),
         'facenet_h5': os.path.exists(h5_path),
         'web_face_model': web_model is not None,
+        'web_face_model_db': has_db_face_model(),
         'web_face_samples': len(web_model['samples']) if web_model else 0,
         'web_face_students': len(set(web_model['labels'])) if web_model else 0,
         'staff_loaded': len(staff_details) if staff_details else 0

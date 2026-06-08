@@ -73,6 +73,17 @@ def init_db():
                     status VARCHAR(20) DEFAULT 'Present'
                 )
             """)
+
+            # Persist the web-trained face model in MySQL so hosted deployments
+            # can survive Render filesystem resets/restarts.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS face_model_store (
+                    model_key VARCHAR(64) PRIMARY KEY,
+                    model_data LONGBLOB NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP
+                )
+            """)
             
             conn.commit()
             last_db_error = None

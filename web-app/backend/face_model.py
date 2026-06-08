@@ -10,6 +10,7 @@ from config import Config
 
 
 MODEL_FILENAME = "web_face_model.pickle"
+MODEL_STORE_KEY = "web_face_model"
 FACE_SIZE = (100, 100)
 MIN_CONFIDENCE = 0.55
 
@@ -23,6 +24,71 @@ class FacePrediction:
 
 def _model_path():
     return os.path.join(Config.MODEL_DIR, MODEL_FILENAME)
+
+
+def _save_model_to_db(model):
+    try:
+        from database import get_db_connection
+
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    REPLACE INTO face_model_store (model_key, model_data)
+                    VALUES (%s, %s)
+                    """,
+                    (MODEL_STORE_KEY, pickle.dumps(model)),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[MODEL] Could not persist web face model to DB: {e}", flush=True)
+
+
+def _delete_model_from_db():
+    try:
+        from database import get_db_connection
+
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM face_model_store WHERE model_key = %s",
+                    (MODEL_STORE_KEY,),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[MODEL] Could not delete web face model from DB: {e}", flush=True)
+
+
+def _load_model_from_db():
+    try:
+        from database import get_db_connection
+
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT model_data FROM face_model_store WHERE model_key = %s",
+                    (MODEL_STORE_KEY,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return None
+                return pickle.loads(row["model_data"])
+        finally:
+            conn.close()
+    except Exception as e:
+        print(f"[MODEL] Could not load web face model from DB: {e}", flush=True)
+        return None
+
+
+def has_db_face_model():
+    return _load_model_from_db() is not None
 
 
 def get_cascade():
@@ -112,6 +178,7 @@ def train_face_model():
         stale_model = _model_path()
         if os.path.exists(stale_model):
             os.remove(stale_model)
+        _delete_model_from_db()
         return {
             "trained": False,
             "message": "No usable face photos found",
@@ -130,6 +197,7 @@ def train_face_model():
 
     with open(_model_path(), "wb") as model_file:
         pickle.dump(model, model_file)
+    _save_model_to_db(model)
 
     return {
         "trained": True,
@@ -143,7 +211,18 @@ def train_face_model():
 def load_face_model():
     path = _model_path()
     if not os.path.exists(path):
-        return None
+        model = _load_model_from_db()
+        if model is None:
+            return None
+
+        os.makedirs(Config.MODEL_DIR, exist_ok=True)
+        try:
+            with open(path, "wb") as model_file:
+                pickle.dump(model, model_file)
+        except Exception as e:
+            print(f"[MODEL] Could not cache DB web face model on disk: {e}", flush=True)
+        return model
+
     with open(path, "rb") as model_file:
         return pickle.load(model_file)
 

@@ -18,12 +18,14 @@ export default function RecognitionPage() {
     const [scanCount, setScanCount] = useState(0);
     const [predictions, setPredictions] = useState([]);
     const intervalRef = useRef(null);
+    const predictionsRef = useRef([]);
     const toast = useToast();
 
     const startCamera = () => {
         setCameraOn(true);
         setResult(null);
         setPredictions([]);
+        predictionsRef.current = [];
         setScanCount(0);
     };
 
@@ -33,6 +35,7 @@ export default function RecognitionPage() {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setResult(null);
         setPredictions([]);
+        predictionsRef.current = [];
         setScanCount(0);
     };
 
@@ -50,12 +53,13 @@ export default function RecognitionPage() {
             if (data.detected && data.results?.length > 0) {
                 const face = data.results[0];
 
-                if (face.name !== 'Unknown' && face.confidence > 60) {
-                    setPredictions(prev => [...prev, face]);
+                if (face.name !== 'Unknown' && face.id) {
+                    const newPredictions = [...predictionsRef.current, face];
+                    predictionsRef.current = newPredictions;
+                    setPredictions(newPredictions);
                     setScanCount(prev => prev + 1);
 
                     // After 5 consistent predictions, mark attendance
-                    const newPredictions = [...predictions, face];
                     if (newPredictions.length >= 5) {
                         // Check if most predictions agree
                         const nameCounts = {};
@@ -96,6 +100,7 @@ export default function RecognitionPage() {
                                 }
                             }
                             setPredictions([]);
+                            predictionsRef.current = [];
                             setScanCount(0);
                         }
                     }
@@ -114,10 +119,23 @@ export default function RecognitionPage() {
             }
         } catch (err) {
             console.error('Recognition error:', err);
+            setAutoScan(false);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            const message = err.response?.data?.error || 'Recognition failed. Please check model status.';
+            setResult({
+                error: true,
+                message,
+                modelMissing: err.response?.data?.model_missing,
+            });
+            if (err.response?.data?.model_missing) {
+                toast.warning('Face model is missing. Capture your student photos again to train it.');
+            } else {
+                toast.error(message);
+            }
         } finally {
             setScanning(false);
         }
-    }, [predictions, toast]);
+    }, [toast]);
 
     // Auto-scan mode
     useEffect(() => {
@@ -134,6 +152,7 @@ export default function RecognitionPage() {
     const resetForNext = () => {
         setResult(null);
         setPredictions([]);
+        predictionsRef.current = [];
         setScanCount(0);
         setAutoScan(true);
     };
@@ -240,6 +259,7 @@ export default function RecognitionPage() {
                                         onClick={() => {
                                             setAutoScan(!autoScan);
                                             setPredictions([]);
+                                            predictionsRef.current = [];
                                             setScanCount(0);
                                             setResult(null);
                                         }}
@@ -348,9 +368,19 @@ export default function RecognitionPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                 >
-                                    <ScanFace size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                                    <h3>{result.unknown ? 'Unknown Face' : 'No Face Detected'}</h3>
-                                    <p>{result.unknown ? 'This face is not registered in the system' : 'Please position your face in front of the camera'}</p>
+                                    {result.error ? (
+                                        <AlertTriangle size={48} style={{ color: 'var(--warning)', opacity: 0.8 }} />
+                                    ) : (
+                                        <ScanFace size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                                    )}
+                                    <h3>{result.error ? 'Recognition Error' : result.unknown ? 'Unknown Face' : 'No Face Detected'}</h3>
+                                    <p>
+                                        {result.error
+                                            ? result.message
+                                            : result.unknown
+                                                ? 'This face is not registered in the system'
+                                                : 'Please position your face in front of the camera'}
+                                    </p>
                                 </motion.div>
                             )}
 

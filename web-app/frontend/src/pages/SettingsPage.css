@@ -28,34 +28,39 @@
     gap: var(--space-md);
 }
 
-.status-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.status-item {
+.account-summary {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+    gap: var(--space-md);
 }
 
-.status-item:last-child {
-    border-bottom: none;
-}
-
-.about-info p {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-}
-
-.about-info strong {
+.account-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.account-label {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.account-username {
+    color: var(--text-primary);
+    font-size: 1.15rem;
+    font-weight: 700;
 }
 
 @media (max-width: 768px) {

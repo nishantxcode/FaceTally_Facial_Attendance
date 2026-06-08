@@ -166,6 +166,20 @@
     letter-spacing: 0.5px;
 }
 
+.login-footer-text+.login-footer-text {
+    margin-top: 8px;
+}
+
+.login-footer-text a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.login-footer-text a:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 480px) {
     .login-card {
         padding: 32px 24px;
